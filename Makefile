@@ -31,7 +31,7 @@ $(Q_FLAG)$(ECHO) " $1 " $(notdir $(2))
 endef
 
 ## Flags
-CC_FLAGS := -Wall -Wextra -Werror
+CC_FLAGS := -Wall -Wextra -Werror -MMD -MP
 LD_FLAGS :=
 RM_FLAGS := -rf
 
@@ -40,6 +40,7 @@ BIN_NEOSH := $(WORKING_DIR)/neosh
 NEOSH_SOURCES := \
 	$(SOURCE_DIR)/neosh.c
 NEOSH_OBJECTS := $(NEOSH_SOURCES:.c=.o)
+NEOSH_DEPENDS := $(NEOSH_SOURCES:.c=.d)
 
 ## Rules
 .PHONY: all
@@ -63,5 +64,12 @@ clean-binaries:
 	$(call notice,RM,$(BIN_NEOSH))
 	$(Q)$(RM) $(RM_FLAGS) $(BIN_NEOSH)
 
+.PHONY: clean-depends
+clean-depends:
+	$(call notice,RM,$(NEOSH_DEPENDS))
+	$(Q)$(RM) $(RM_FLAGS) $(NEOSH_DEPENDS)
+
 .PHONY: clean
-clean: clean-objects clean-binaries
+clean: clean-objects clean-depends clean-binaries
+
+-include $(NEOSH_DEPENDS)

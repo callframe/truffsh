@@ -53,6 +53,7 @@ CC_FLAGS := \
 LD_FLAGS := 
 RM_FLAGS := -rf
 SED_FLAGS := -e
+CMAKE_FLAGS := -G"Unix Makefiles"
 
 ## Configs
 SED_FLAGS += "s/@NEOSH_DEBUG@/$(WITH_DEBUG)/g"
@@ -82,7 +83,7 @@ $(MIMALLOC_BUILD_DIR):
 
 $(MIMALLOC_OBJECT): | $(MIMALLOC_BUILD_DIR)
 	$(call notice,MAKE,$@)
-	$(Q)$(MAKE) -C $(MIMALLOC_BUILD_DIR) $(notdir $@)
+	$(Q)$(MAKE) -C $(MIMALLOC_BUILD_DIR)
 
 $(CONFIG_H): $(CONFIG_H_IN)
 	$(call notice,SED,$@)

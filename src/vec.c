@@ -27,7 +27,7 @@ static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
 
 static void neosh_vec_shrink(struct vec_s *vec) {
   usize shrink_ecap = vec->ecap / NEOSH_VEC_SHRINK;
-  if (vec->elen > shrink_ecap)
+  if (vec->elen > shrink_ecap && shrink_ecap == 0)
     return;
 
   usize new_bytes = neosh_vec_size(vec, shrink_ecap);

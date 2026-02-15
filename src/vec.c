@@ -3,13 +3,18 @@
 #include <string.h>
 #include <vec.h>
 
+static inline usize neosh_vec_size(const struct vec_s *vec, usize nelems) {
+  neosh_assert(vec != NULL);
+  return nelems * vec->esize;
+}
+
 static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
   usize grown_ecap = vec->ecap * NEOSH_VEC_GROWTH;
   usize required = neosh_max(new_nelems, NEOSH_VEC_INITIAL);
   usize new_ecap = neosh_max(grown_ecap, required);
 
-  usize old_bytes = vec->elen * vec->esize;
-  usize new_bytes = new_ecap * vec->esize;
+  usize old_bytes = neosh_vec_size(vec, vec->elen);
+  usize new_bytes = neosh_vec_size(vec, new_ecap);
 
   u8 *new_elems = malloc(new_bytes);
   if (old_bytes > 0)
@@ -20,9 +25,9 @@ static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
   vec->ecap = new_ecap;
 }
 
-static inline u8 *neosh_vec_ptr_at(struct vec_s *vec, usize index) {
+static inline u8 *neosh_vec_ptr(struct vec_s *vec, usize index) {
   neosh_assert(vec != NULL);
-  return vec->elems + index * vec->esize;
+  return vec->elems + neosh_vec_size(vec, index);
 }
 
 void neosh_vec_push_back(struct vec_s *vec, const u8 *elem) {
@@ -32,9 +37,29 @@ void neosh_vec_push_back(struct vec_s *vec, const u8 *elem) {
   if (vec->elen == vec->ecap)
     neosh_vec_grow(vec, vec->elen + 1);
 
-  u8 *dest = neosh_vec_ptr_at(vec, vec->elen);
+  u8 *dest = neosh_vec_ptr(vec, vec->elen);
   memcpy(dest, elem, vec->esize);
   vec->elen++;
+}
+
+bool neosh_vec_pop_front(struct vec_s *vec, u8 *out) {
+  neosh_assert(vec != NULL);
+  neosh_assert(out != NULL);
+
+  if (vec->elen == 0)
+    return false;
+
+  memcpy(out, vec->elems, vec->esize);
+  if (vec->elen == 1) {
+    vec->elen = 0;
+    return true;
+  }
+
+  usize shift_bytes = neosh_vec_size(vec, vec->elen - 1);
+  memmove(vec->elems, vec->elems + vec->esize, shift_bytes);
+
+  vec->elen--;
+  return true;
 }
 
 void neosh_vec_deinit(struct vec_s *vec) {

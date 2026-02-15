@@ -1,0 +1,7 @@
+#pragma once
+
+/* clang-format off */
+
+#define NEOSH_DEBUG @NEOSH_DEBUG@
+
+/* clang-format on */

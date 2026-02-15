@@ -21,12 +21,3 @@ typedef i32 isize;
 #else
 #error "Unsupported pointer width"
 #endif
-
-struct span_s {
-  u8 *ptr;
-  usize len;
-};
-
-#define span_init(ptr, len) ((struct span_s){.ptr = (ptr), .len = (len)})
-#define span_ptr(span) ((span).ptr)
-#define span_len(span) ((span).len)

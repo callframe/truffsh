@@ -57,3 +57,4 @@ dkms.conf
 neosh
 compile_commands.json
 .cache/
+config.h

@@ -1,6 +1,5 @@
 #include "mimalloc.h"
 #include <defines.h>
-#include <stdlib.h>
 #include <string.h>
 #include <vec.h>
 
@@ -24,6 +23,21 @@ static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
 
   vec->elems = new_elems;
   vec->ecap = new_ecap;
+}
+
+static void neosh_vec_shrink(struct vec_s *vec) {
+  usize shrink_ecap = vec->ecap / NEOSH_VEC_SHRINK;
+  if (vec->elen > shrink_ecap)
+    return;
+
+  usize new_bytes = neosh_vec_size(vec, shrink_ecap);
+  u8 *new_elems = mi_malloc(new_bytes);
+  if (vec->elen > 0)
+    memcpy(new_elems, vec->elems, neosh_vec_size(vec, vec->elen));
+  mi_free(vec->elems);
+
+  vec->elems = new_elems;
+  vec->ecap = shrink_ecap;
 }
 
 static inline u8 *neosh_vec_ptr(struct vec_s *vec, usize index) {
@@ -57,9 +71,11 @@ bool neosh_vec_pop_front(struct vec_s *vec, u8 *out) {
   }
 
   usize shift_bytes = neosh_vec_size(vec, vec->elen - 1);
-  memmove(vec->elems, vec->elems + vec->esize, shift_bytes);
+  u8 *src = neosh_vec_ptr(vec, 1);
+  memmove(vec->elems, src, shift_bytes);
 
   vec->elen--;
+  neosh_vec_shrink(vec);
   return true;
 }
 
@@ -69,7 +85,7 @@ void neosh_vec_deinit(struct vec_s *vec) {
   if (vec->elems == NULL)
     return;
 
-  free(vec->elems);
+  mi_free(vec->elems);
   vec->elems = NULL;
   vec->ecap = 0;
   vec->elen = 0;

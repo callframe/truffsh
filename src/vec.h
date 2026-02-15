@@ -5,6 +5,7 @@
 
 #define NEOSH_VEC_INITIAL 4
 #define NEOSH_VEC_GROWTH 2
+#define NEOSH_VEC_SHRINK 4
 
 struct vec_s {
   u8 *elems;

@@ -32,7 +32,11 @@ $(Q_FLAG)$(ECHO) " $1 " $(notdir $(2))
 endef
 
 ## Flags
-CC_FLAGS := -Wall -Wextra -Werror -MMD -MP -I$(WORKING_DIR)
+CC_FLAGS := \
+	-std=c11 \
+	-Wall -Wextra -Werror \
+	-MMD -MP \
+	-I$(WORKING_DIR) -I$(SOURCE_DIR)
 LD_FLAGS :=
 RM_FLAGS := -rf
 SED_FLAGS := -e
@@ -48,7 +52,9 @@ NEOSH_DEBUG := "@NEOSH_DEBUG@"
 ## Targets
 BIN_NEOSH := $(WORKING_DIR)/neosh
 NEOSH_SOURCES := \
-	$(SOURCE_DIR)/neosh.c
+	$(SOURCE_DIR)/neosh.c \
+	$(SOURCE_DIR)/vec.c
+
 NEOSH_OBJECTS := $(NEOSH_SOURCES:.c=.o)
 NEOSH_DEPENDS := $(NEOSH_SOURCES:.c=.d)
 

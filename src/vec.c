@@ -11,8 +11,10 @@ static inline usize neosh_vec_size(const struct vec_s *vec, usize nelems) {
 static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
   usize grown_ecap = vec->ecap * NEOSH_VEC_GROWTH;
   usize required = neosh_max(new_nelems, NEOSH_VEC_INITIAL);
+
   usize new_ecap = neosh_max(grown_ecap, required);
   usize new_bytes = neosh_vec_size(vec, new_ecap);
+
   u8 *new_elems = mi_malloc(new_bytes);
 
   if (vec->elems == NULL) {
@@ -36,8 +38,10 @@ static void neosh_vec_shrink(struct vec_s *vec) {
 
   usize new_bytes = neosh_vec_size(vec, shrink_ecap);
   u8 *new_elems = mi_malloc(new_bytes);
+  
   memcpy(new_elems, vec->elems, neosh_vec_size(vec, vec->elen));
   mi_free(vec->elems);
+  
   vec->elems = new_elems;
   vec->ecap = shrink_ecap;
 }

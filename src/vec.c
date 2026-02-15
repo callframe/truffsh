@@ -1,3 +1,4 @@
+#include "mimalloc.h"
 #include <defines.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,10 +17,10 @@ static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
   usize old_bytes = neosh_vec_size(vec, vec->elen);
   usize new_bytes = neosh_vec_size(vec, new_ecap);
 
-  u8 *new_elems = malloc(new_bytes);
+  u8 *new_elems = mi_malloc(new_bytes);
   if (old_bytes > 0)
     memcpy(new_elems, vec->elems, old_bytes);
-  free(vec->elems);
+  mi_free(vec->elems);
 
   vec->elems = new_elems;
   vec->ecap = new_ecap;

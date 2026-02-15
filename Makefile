@@ -1,6 +1,5 @@
 ## Makefile configure
 .DEFAULT_GOAL := all
-MAKEFLAGS += --warn-undefined-variables
 Q_FLAG := @
 
 ## Paths
@@ -28,12 +27,17 @@ else ifeq ($(WITH_TC), $(GCC_NAME))
 	CC := gcc
 endif
 
+ifeq ($(CC),)
+	$(error "Unsupported toolchain: $(WITH_TC)")
+endif
+
 define notice
 $(Q_FLAG)$(ECHO) " $1 " $(notdir $(2))
 endef
 
 ## Dependencies
 MIMALLOC_DIR := $(WORKING_DIR)/mimalloc
+MIMALLOC_INCLUDE := $(MIMALLOC_DIR)/include
 MIMALLOC_BUILD_DIR := $(MIMALLOC_DIR)/build
 MIMALLOC_OBJECT := $(MIMALLOC_BUILD_DIR)/mimalloc.o
 MIMALLOC_FLAGS := \
@@ -49,7 +53,7 @@ CC_FLAGS := \
 	-std=c11 \
 	-Wall -Wextra -Werror \
 	-MMD -MP \
-	-I$(WORKING_DIR) -I$(SOURCE_DIR)
+	-I$(WORKING_DIR) -I$(SOURCE_DIR) -I$(MIMALLOC_INCLUDE)
 LD_FLAGS := 
 RM_FLAGS := -rf
 SED_FLAGS := -e

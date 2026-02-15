@@ -20,6 +20,7 @@ GCC_NAME := gcc
 ECHO := echo
 RM := rm
 SED := sed
+CMAKE := cmake
 
 ifeq ($(WITH_TC), $(CLANG_NAME))
 	CC := clang
@@ -31,13 +32,25 @@ define notice
 $(Q_FLAG)$(ECHO) " $1 " $(notdir $(2))
 endef
 
+## Dependencies
+MIMALLOC_DIR := $(WORKING_DIR)/mimalloc
+MIMALLOC_BUILD_DIR := $(MIMALLOC_DIR)/build
+MIMALLOC_OBJECT := $(MIMALLOC_BUILD_DIR)/mimalloc.o
+MIMALLOC_FLAGS := \
+	-DMI_BUILD_OBJECT=ON \
+	-DMI_BUILD_TESTS=OFF \
+	-DMI_BUILD_STATIC=OFF \
+	-DMI_BUILD_SHARED=OFF \
+	-DMI_XMALLOC=ON \
+	-DMI_OVERRIDE=ON
+
 ## Flags
 CC_FLAGS := \
 	-std=c11 \
 	-Wall -Wextra -Werror \
 	-MMD -MP \
 	-I$(WORKING_DIR) -I$(SOURCE_DIR)
-LD_FLAGS :=
+LD_FLAGS := 
 RM_FLAGS := -rf
 SED_FLAGS := -e
 
@@ -56,17 +69,26 @@ NEOSH_SOURCES := \
 	$(SOURCE_DIR)/vec.c
 
 NEOSH_OBJECTS := $(NEOSH_SOURCES:.c=.o)
+NEOSH_OBJECTS += $(MIMALLOC_OBJECT)
 NEOSH_DEPENDS := $(NEOSH_SOURCES:.c=.d)
 
 ## Rules
 .PHONY: all
 all: $(BIN_NEOSH)
 
+$(MIMALLOC_BUILD_DIR):
+	$(call notice,CMAKE,$@)
+	$(Q)CC=$(CC) $(CMAKE) -S $(MIMALLOC_DIR) -B $@ $(MIMALLOC_FLAGS)
+
+$(MIMALLOC_OBJECT): | $(MIMALLOC_BUILD_DIR)
+	$(call notice,MAKE,$@)
+	$(Q)$(MAKE) -C $(MIMALLOC_BUILD_DIR) $(notdir $@)
+
 $(CONFIG_H): $(CONFIG_H_IN)
 	$(call notice,SED,$@)
 	$(Q)$(SED) $(SED_FLAGS) $< > $@
 
-$(BIN_NEOSH): $(NEOSH_OBJECTS)
+$(BIN_NEOSH): $(NEOSH_OBJECTS) $(MIMALLOC_OBJECT)
 	$(call notice,LD,$@)
 	$(Q)$(CC) $(LD_FLAGS) -o $@ $^
 
@@ -90,8 +112,12 @@ clean-binaries:
 	$(call notice,RM,$(BIN_NEOSH))
 	$(Q)$(RM) $(RM_FLAGS) $(BIN_NEOSH)
 
+.PHONY: clean-mimalloc
+clean-mimalloc:
+	$(call notice,RM,$(MIMALLOC_BUILD_DIR))
+	$(Q)$(RM) $(RM_FLAGS) $(MIMALLOC_BUILD_DIR)
 
 .PHONY: clean
-clean: clean-objects clean-binaries
+clean: clean-objects clean-binaries clean-mimalloc
 
 -include $(NEOSH_DEPENDS)

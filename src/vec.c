@@ -12,30 +12,32 @@ static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
   usize grown_ecap = vec->ecap * NEOSH_VEC_GROWTH;
   usize required = neosh_max(new_nelems, NEOSH_VEC_INITIAL);
   usize new_ecap = neosh_max(grown_ecap, required);
-
-  usize old_bytes = neosh_vec_size(vec, vec->elen);
   usize new_bytes = neosh_vec_size(vec, new_ecap);
-
   u8 *new_elems = mi_malloc(new_bytes);
-  if (old_bytes > 0)
-    memcpy(new_elems, vec->elems, old_bytes);
-  mi_free(vec->elems);
 
+  if (vec->elems == NULL) {
+    vec->elems = new_elems;
+    vec->ecap = new_ecap;
+    return;
+  }
+
+  memcpy(new_elems, vec->elems, neosh_vec_size(vec, vec->elen));
+  mi_free(vec->elems);
   vec->elems = new_elems;
   vec->ecap = new_ecap;
 }
 
 static void neosh_vec_shrink(struct vec_s *vec) {
   usize shrink_ecap = vec->ecap / NEOSH_VEC_SHRINK;
-  if (vec->elen > shrink_ecap && shrink_ecap == 0)
+  if (shrink_ecap == 0)
+    return;
+  if (vec->elen > shrink_ecap)
     return;
 
   usize new_bytes = neosh_vec_size(vec, shrink_ecap);
   u8 *new_elems = mi_malloc(new_bytes);
-  if (vec->elen > 0)
-    memcpy(new_elems, vec->elems, neosh_vec_size(vec, vec->elen));
+  memcpy(new_elems, vec->elems, neosh_vec_size(vec, vec->elen));
   mi_free(vec->elems);
-
   vec->elems = new_elems;
   vec->ecap = shrink_ecap;
 }

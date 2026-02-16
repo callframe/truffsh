@@ -1,5 +1,8 @@
 #![no_std]
 
+#[cfg(windows)]
+compile_error!("Windows is not supported yet");
+
 use typed_builder::TypedBuilder;
 
 #[derive(TypedBuilder)]

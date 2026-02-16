@@ -1,0 +1,10 @@
+{
+    "crates": [
+        {
+            "root_module": "modules/neosh/main.rs",
+            "edition": "2024",
+            "deps": [],
+            "cfg": []
+        }
+    ]
+}

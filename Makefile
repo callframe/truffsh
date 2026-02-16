@@ -64,4 +64,4 @@ clean-mimalloc:
 	$(Q)$(RM) $(RM_FLAGS) $(MIMALLOC_BUILD_DIR)
 
 .PHONY: clean
-clean: clean-mimalloc
+clean: clean-neosh clean-mimalloc

@@ -29,7 +29,7 @@ static void neosh_vec_grow(struct vec_s *vec, usize new_nelems) {
   vec->ecap = new_ecap;
 }
 
-static void neosh_vec_shrink(struct vec_s *vec) {
+/* static void neosh_vec_shrink(struct vec_s *vec) {
   usize shrink_ecap = vec->ecap / NEOSH_VEC_SHRINK;
   if (shrink_ecap == 0)
     return;
@@ -38,13 +38,13 @@ static void neosh_vec_shrink(struct vec_s *vec) {
 
   usize new_bytes = neosh_vec_size(vec, shrink_ecap);
   u8 *new_elems = mi_malloc(new_bytes);
-  
+
   memcpy(new_elems, vec->elems, neosh_vec_size(vec, vec->elen));
   mi_free(vec->elems);
-  
+
   vec->elems = new_elems;
   vec->ecap = shrink_ecap;
-}
+} */
 
 static inline u8 *neosh_vec_ptr(struct vec_s *vec, usize index) {
   neosh_assert(vec != NULL);
@@ -61,28 +61,6 @@ void neosh_vec_push_back(struct vec_s *vec, const u8 *elem) {
   u8 *dest = neosh_vec_ptr(vec, vec->elen);
   memcpy(dest, elem, vec->esize);
   vec->elen++;
-}
-
-bool neosh_vec_pop_front(struct vec_s *vec, u8 *out) {
-  neosh_assert(vec != NULL);
-  neosh_assert(out != NULL);
-
-  if (vec->elen == 0)
-    return false;
-
-  memcpy(out, vec->elems, vec->esize);
-  if (vec->elen == 1) {
-    vec->elen = 0;
-    return true;
-  }
-
-  usize shift_bytes = neosh_vec_size(vec, vec->elen - 1);
-  u8 *src = neosh_vec_ptr(vec, 1);
-  memmove(vec->elems, src, shift_bytes);
-
-  vec->elen--;
-  neosh_vec_shrink(vec);
-  return true;
 }
 
 void neosh_vec_deinit(struct vec_s *vec) {

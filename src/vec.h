@@ -17,6 +17,5 @@ struct vec_s {
   (struct vec_s){.elems = NULL, .esize = sizeof(etype), .ecap = 0, .elen = 0}
 
 void neosh_vec_push_back(struct vec_s *vec, const u8 *elem);
-bool neosh_vec_pop_front(struct vec_s *vec, u8 *out);
 
 void neosh_vec_deinit(struct vec_s *vec);

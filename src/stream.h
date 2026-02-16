@@ -5,5 +5,5 @@
 
 struct stream_s {
   i32 fd;
-  struct vec_s buf;
+  
 };

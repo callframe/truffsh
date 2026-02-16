@@ -51,6 +51,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "neosh-arena"
+version = "0.1.0"
+dependencies = [
+ "neosh-mutex",
+]
+
+[[package]]
+name = "neosh-mutex"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

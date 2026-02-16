@@ -4,8 +4,11 @@ description = "A new kind of Shell"
 license = "Apache-2.0"
 
 [workspace]
-members = ["neosh"]
+members = ["crates/neosh-arena", "crates/neosh-mutex", "neosh"]
 resolver = "3"
 
 [workspace.dependencies]
 mimalloc = { version = "0.1.48", features = ["v3", "override"] }
+libc = { version = "0.2.182", default-features = false }
+
+neosh-mutex = { path = "crates/neosh-mutex" }

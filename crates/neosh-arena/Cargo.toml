@@ -1,0 +1,9 @@
+[package]
+name = "neosh-arena"
+edition = "2024"
+version.workspace = true
+description.workspace = true
+license.workspace = true
+
+[dependencies]
+neosh-mutex = { workspace = true }

@@ -35,9 +35,27 @@ impl From<FileMode> for *const libc::c_char {
 #[derive(Debug)]
 pub enum FileError {
   OpenFailed,
+  SeekFailed,
   ReadFailed,
   WriteFailed,
   OutOfMemory,
+}
+
+#[repr(u8)]
+pub enum FileWhence {
+  Start,
+  Current,
+  End,
+}
+
+impl From<FileWhence> for libc::c_int {
+  fn from(whence: FileWhence) -> Self {
+    match whence {
+      FileWhence::Start => libc::SEEK_SET,
+      FileWhence::Current => libc::SEEK_CUR,
+      FileWhence::End => libc::SEEK_END,
+    }
+  }
 }
 
 pub struct File {
@@ -84,11 +102,7 @@ impl File {
     })
   }
 
-  pub unsafe fn new_raw(
-    fd: libc::c_int,
-    mode: FileMode,
-    buffer_size: usize,
-  ) -> Result<Self, FileError> {
+  pub unsafe fn new_raw(fd: i32, mode: FileMode, buffer_size: usize) -> Result<Self, FileError> {
     let file = unsafe { libc::fdopen(fd, mode.into()) };
     if file.is_null() {
       return Err(FileError::OpenFailed);
@@ -101,6 +115,14 @@ impl File {
       handle: file,
       buffer,
     })
+  }
+
+  pub fn seek(&mut self, offset: i64, whence: FileWhence) -> Result<(), FileError> {
+    let rc = unsafe { libc::fseek(self.handle, offset as libc::c_long, whence.into()) };
+    if rc != 0 {
+      return Err(FileError::SeekFailed);
+    }
+    Ok(())
   }
 }
 

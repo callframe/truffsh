@@ -1,3 +1,4 @@
 build*/
 out*/
 rust-project.json
+**/__pycache__/*

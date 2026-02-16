@@ -2,9 +2,22 @@
   "sysroot_src": "@SYSROOT@/lib/rustlib/src/rust/library",
   "crates": [
     {
-      "root_module": "modules/neosh/main.rs",
+      "root_module": "modules/neo-ffi/lib.rs",
       "edition": "2024",
       "deps": [],
+      "cfg": [],
+      "env": {},
+      "is_proc_macro": false
+    },
+    {
+      "root_module": "modules/neosh/main.rs",
+      "edition": "2024",
+      "deps": [
+        {
+          "crate": 0,
+          "name": "neo_ffi"
+        }
+      ],
       "cfg": [],
       "env": {},
       "is_proc_macro": false

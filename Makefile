@@ -44,7 +44,12 @@ LD_FLAGS :=
 SED_FLAGS := -e
 RM_FLAGS := -rf
 CMAKE_FLAGS := -G"Unix Makefiles"
-RUST_FLAGS := +nightly
+RUST_FLAGS := \
+	--target=$(TOOLCHAIN) \
+	--edition=2024 \
+	-C panic=abort \
+	-C lto=thin
+
 RUST_SYSROOT_FLAGS := --print sysroot
 
 ## Includes
@@ -82,4 +87,4 @@ clean-rust-project:
 	$(Q)$(RM) $(RM_FLAGS) $(RUST_PROJECT_OUT)
 
 .PHONY: clean
-clean: clean-neosh clean-mimalloc clean-rust-project
+clean: clean-modules clean-mimalloc clean-rust-project

@@ -53,7 +53,7 @@ include $(MODULES_DIR)/modules.mk
 
 ## Rules
 .PHONY: all
-all: $(NEOSH_OUTPUT)
+all: $(RUST_PROJECT_OUT) $(NEOSH_OUTPUT)
 
 $(RUST_PROJECT_OUT): SYSROOT := $(shell $(RUSTC) $(RUST_FLAGS))
 $(RUST_PROJECT_OUT): $(RUST_PROJECT_IN)

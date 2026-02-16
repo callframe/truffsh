@@ -77,5 +77,10 @@ clean-mimalloc:
 	$(call notice,RM,$(MIMALLOC_BUILD_DIR))
 	$(Q)$(RM) $(RM_FLAGS) $(MIMALLOC_BUILD_DIR)
 
+.PHONY: clean-rust-project
+clean-rust-project:
+	$(call notice,RM,$(RUST_PROJECT_OUT))
+	$(Q)$(RM) $(RM_FLAGS) $(RUST_PROJECT_OUT)
+
 .PHONY: clean
-clean: clean-neosh clean-mimalloc
+clean: clean-neosh clean-mimalloc clean-rust-project

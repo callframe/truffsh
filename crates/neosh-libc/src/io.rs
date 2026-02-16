@@ -85,6 +85,10 @@ impl File {
     Ok(())
   }
 
+  fn destroy_buffer(buffer: &Slice) {
+    unsafe { dealloc(buffer.ptr(), Self::buffer_layout(buffer.len())) };
+  }
+
   pub fn new(path: &str, mode: FileMode) -> Result<Self, FileError> {
     let c_path = cstr(path);
 
@@ -93,8 +97,22 @@ impl File {
       return Err(FileError::OpenFailed);
     }
 
-    let buffer = Self::create_buffer(FILE_BUFFER)?;
-    Self::use_buffer(file, &buffer)?;
+    let buffer = match Self::create_buffer(FILE_BUFFER) {
+      Ok(buf) => buf,
+      Err(e) => {
+        unsafe { libc::fclose(file) };
+        return Err(e);
+      }
+    };
+
+    match Self::use_buffer(file, &buffer) {
+      Ok(()) => (),
+      Err(e) => {
+        unsafe { libc::fclose(file) };
+        Self::destroy_buffer(&buffer);
+        return Err(e);
+      }
+    }
 
     Ok(Self {
       handle: file,
@@ -108,8 +126,22 @@ impl File {
       return Err(FileError::OpenFailed);
     }
 
-    let buffer = Self::create_buffer(buffer_size)?;
-    Self::use_buffer(file, &buffer)?;
+    let buffer = match Self::create_buffer(buffer_size) {
+      Ok(buf) => buf,
+      Err(e) => {
+        unsafe { libc::fclose(file) };
+        return Err(e);
+      }
+    };
+
+    match Self::use_buffer(file, &buffer) {
+      Ok(()) => (),
+      Err(e) => {
+        unsafe { libc::fclose(file) };
+        Self::destroy_buffer(&buffer);
+        return Err(e);
+      }
+    }
 
     Ok(Self {
       handle: file,
@@ -129,6 +161,6 @@ impl File {
 impl Drop for File {
   fn drop(&mut self) {
     unsafe { libc::fclose(self.handle) };
-    unsafe { dealloc(self.buffer.ptr(), Self::buffer_layout(self.buffer.len())) };
+    Self::destroy_buffer(&self.buffer);
   }
 }

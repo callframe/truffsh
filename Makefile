@@ -45,7 +45,6 @@ SED_FLAGS := -e
 RM_FLAGS := -rf
 CMAKE_FLAGS := -G"Unix Makefiles"
 RUST_FLAGS := \
-	--target=$(TOOLCHAIN) \
 	--print sysroot
 
 ## Includes

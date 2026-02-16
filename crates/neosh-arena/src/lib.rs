@@ -3,48 +3,141 @@
 extern crate alloc;
 
 use alloc::{
-  boxed::Box,
+  alloc::alloc_zeroed,
   vec::Vec,
 };
 use core::{
   alloc::Layout,
-  mem::MaybeUninit,
-  sync::atomic::AtomicUsize,
+  cell::UnsafeCell,
 };
 use neosh_mutex::Mutex;
+
+pub const CHUNK_SIZE: usize = 1024 * 1024;
+
+#[derive(Debug)]
+pub enum ArenaError {
+  OutOfMemory,
+  TooLarge,
+  ZeroSized,
+}
 
 #[inline(always)]
 fn align_up(addr: usize, align: usize) -> usize {
   (addr + align - 1) & !(align - 1)
 }
 
-struct ArenaChunk<const CHUNK_SIZE: usize = 1, const MIN_ALIGN: usize = 1> {
-  data: [MaybeUninit<u8>; CHUNK_SIZE],
-  used: AtomicUsize,
+struct ArenaChunkRange {
+  start: usize,
+  end: usize,
 }
 
-type BoxedArenaChunk<const CHUNK_SIZE: usize = 1, const MIN_ALIGN: usize = 1> =
-  Box<ArenaChunk<CHUNK_SIZE, MIN_ALIGN>>;
+struct ArenaChunk<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> {
+  ptr: *mut u8,
+  capacity: usize,
+  used: usize,
+}
 
 impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> ArenaChunk<CHUNK_SIZE, MIN_ALIGN> {
-  pub fn new() -> Self {
-    Self {
-      data: unsafe { MaybeUninit::uninit().assume_init() },
-      used: AtomicUsize::new(0),
+  pub fn new() -> Result<Self, ArenaError> {
+    let layout = Layout::from_size_align(CHUNK_SIZE, MIN_ALIGN).unwrap();
+    let ptr = unsafe { alloc_zeroed(layout) };
+    if ptr.is_null() {
+      return Err(ArenaError::OutOfMemory);
     }
+
+    let chunk = Self {
+      ptr,
+      capacity: CHUNK_SIZE,
+      used: 0,
+    };
+
+    Ok(chunk)
+  }
+
+  #[inline(always)]
+  fn get_current_addr(&self) -> usize {
+    self.ptr as usize + self.used
+  }
+
+  #[inline(always)]
+  fn get_aligned(&self, layout: Layout) -> ArenaChunkRange {
+    let curr = self.get_current_addr();
+    let aligned = align_up(curr, layout.align());
+    ArenaChunkRange {
+      start: aligned,
+      end: aligned + layout.size(),
+    }
+  }
+
+  pub fn allocate(&mut self, layout: Layout) -> Option<*mut u8> {
+    assert!(layout.size() > 0);
+    assert!(layout.size() <= self.capacity);
+    assert!(layout.align() <= self.capacity);
+
+    let aligned = self.get_aligned(layout);
+    let new_used = aligned.end - self.ptr as usize;
+    if new_used > self.capacity {
+      return None;
+    }
+
+    self.used = new_used;
+    Some(aligned.start as *mut u8)
   }
 }
 
 pub struct Arena<const CHUNK_SIZE: usize = 1, const MIN_ALIGN: usize = 1> {
-  chunks: Vec<BoxedArenaChunk<CHUNK_SIZE, MIN_ALIGN>>,
+  chunks: UnsafeCell<Vec<ArenaChunk<CHUNK_SIZE, MIN_ALIGN>>>,
   lock: Mutex,
 }
 
 impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIGN> {
-  pub fn new() -> Self {
-    Self {
-      chunks: Vec::new(),
+  pub fn new() -> Result<Self, ArenaError> {
+    let chunks = Vec::new();
+    let arena = Self {
+      chunks: UnsafeCell::new(chunks),
       lock: Mutex::new(),
+    };
+
+    Ok(arena)
+  }
+
+  unsafe fn get_chunks(&self) -> &mut Vec<ArenaChunk<CHUNK_SIZE, MIN_ALIGN>> {
+    unsafe { &mut *self.chunks.get() }
+  }
+
+  pub fn try_allocate(&self, layout: Layout) -> Result<*mut u8, ArenaError> {
+    if layout.size() == 0 {
+      return Err(ArenaError::ZeroSized);
     }
+
+    if layout.size() > CHUNK_SIZE {
+      return Err(ArenaError::TooLarge);
+    }
+
+    self.lock.lock();
+    let chunks = unsafe { self.get_chunks() };
+
+    if let Some(chunk) = chunks.last_mut() {
+      if let Some(ptr) = chunk.allocate(layout) {
+        self.lock.unlock();
+        return Ok(ptr);
+      }
+    }
+
+    let mut new_chunk = ArenaChunk::<CHUNK_SIZE, MIN_ALIGN>::new()?;
+    let ptr = new_chunk.allocate(layout).unwrap();
+    chunks.push(new_chunk);
+
+    self.lock.unlock();
+    Ok(ptr)
+  }
+
+  pub fn allocate(&self, layout: Layout) -> *mut u8 {
+    self.try_allocate(layout).unwrap()
   }
 }
+
+unsafe impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Sync for Arena<CHUNK_SIZE, MIN_ALIGN> {}
+
+#[cfg(test)]
+mod tests;

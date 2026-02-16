@@ -27,7 +27,7 @@ impl Mutex {
     &self.inner as *const _ as *mut _
   }
 
-  pub fn lock(&self) {
+  pub fn lock<'m>(&'m self) {
     unsafe {
       libc::pthread_mutex_lock(self.get_mutex_ptr());
     }

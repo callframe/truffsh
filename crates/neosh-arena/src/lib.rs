@@ -17,6 +17,7 @@ use neosh_mutex::Mutex;
 use typed_builder::TypedBuilder;
 
 pub const CHUNK_SIZE: usize = 1024 * 1024;
+pub const CHUNK_ALIGN: usize = 16;
 
 #[derive(Debug)]
 pub enum ArenaError {
@@ -42,9 +43,9 @@ struct ArenaChunk<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> {
   used: usize,
 }
 
-impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> ArenaChunk<CHUNK_SIZE, MIN_ALIGN> {
+impl<const CSIZE: usize, const CALIGN: usize> ArenaChunk<CSIZE, CALIGN> {
   pub fn new() -> Result<Self, ArenaError> {
-    let layout = Layout::from_size_align(CHUNK_SIZE, MIN_ALIGN).unwrap();
+    let layout = Layout::from_size_align(CSIZE, CALIGN).unwrap();
     let ptr = unsafe { alloc_zeroed(layout) };
     if ptr.is_null() {
       return Err(ArenaError::OutOfMemory);
@@ -52,7 +53,7 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> ArenaChunk<CHUNK_SIZE, MIN
 
     let chunk = Self {
       ptr,
-      capacity: CHUNK_SIZE,
+      capacity: CSIZE,
       used: 0,
     };
 
@@ -97,12 +98,12 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Drop for ArenaChunk<CHUNK_
   }
 }
 
-pub struct Arena<const CSIZE: usize = CHUNK_SIZE, const MIN_ALIGN: usize = CSIZE> {
-  chunks: UnsafeCell<Vec<ArenaChunk<CSIZE, MIN_ALIGN>>>,
+pub struct Arena<const CSIZE: usize = CHUNK_SIZE, const CALIGN: usize = CHUNK_ALIGN> {
+  chunks: UnsafeCell<Vec<ArenaChunk<CSIZE, CALIGN>>>,
   lock: Mutex,
 }
 
-impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIGN> {
+impl<const CSIZE: usize, const CALIGN: usize> Arena<CSIZE, CALIGN> {
   pub fn new() -> Result<Self, ArenaError> {
     let chunks = Vec::new();
     let arena = Self {
@@ -113,7 +114,7 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIG
     Ok(arena)
   }
 
-  unsafe fn get_chunks(&self) -> &mut Vec<ArenaChunk<CHUNK_SIZE, MIN_ALIGN>> {
+  unsafe fn get_chunks(&self) -> &mut Vec<ArenaChunk<CSIZE, CALIGN>> {
     unsafe { &mut *self.chunks.get() }
   }
 
@@ -122,7 +123,7 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIG
       return Err(ArenaError::ZeroSized);
     }
 
-    if layout.size() > CHUNK_SIZE {
+    if layout.size() > CSIZE {
       return Err(ArenaError::TooLarge);
     }
 
@@ -135,7 +136,7 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIG
       }
     }
 
-    let mut new_chunk = ArenaChunk::<CHUNK_SIZE, MIN_ALIGN>::new()?;
+    let mut new_chunk = ArenaChunk::<CSIZE, CALIGN>::new()?;
     let ptr = new_chunk.allocate(layout).unwrap();
     chunks.push(new_chunk);
     Ok(ptr)
@@ -146,7 +147,7 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIG
   }
 }
 
-unsafe impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Sync for Arena<CHUNK_SIZE, MIN_ALIGN> {}
+unsafe impl<const CSIZE: usize, const CALIGN: usize> Sync for Arena<CSIZE, CALIGN> {}
 
 #[cfg(test)]
 mod tests;

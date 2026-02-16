@@ -4,7 +4,12 @@ description = "A new kind of Shell"
 license = "Apache-2.0"
 
 [workspace]
-members = ["crates/neosh-arena", "crates/neosh-mutex", "neosh"]
+members = [
+    "crates/neosh-arena",
+    "crates/neosh-libc",
+    "crates/neosh-mutex",
+    "neosh",
+]
 resolver = "3"
 
 [workspace.dependencies]
@@ -12,9 +17,11 @@ mimalloc = { version = "0.1.48", features = ["v3", "override"] }
 libc = { version = "0.2.182", default-features = false }
 
 typed-builder = { version = "0.23.2" }
+getset = { version = "0.1.6" }
 
 neosh-mutex = { path = "crates/neosh-mutex" }
 neosh-arena = { path = "crates/neosh-arena" }
+neosh-libc = { path = "crates/neosh-libc" }
 
 [profile.dev]
 codegen-units = 1

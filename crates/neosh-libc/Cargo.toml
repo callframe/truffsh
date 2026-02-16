@@ -1,13 +1,12 @@
 [package]
-name = "neosh"
+name = "neosh-libc"
 edition = "2024"
 version.workspace = true
 description.workspace = true
 license.workspace = true
 
 [dependencies]
-mimalloc = { workspace = true }
 libc = { workspace = true }
 
-neosh-arena = { workspace = true }
-neosh-libc = { workspace = true }
+getset = { workspace = true }
+typed-builder = { workspace = true }

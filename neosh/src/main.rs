@@ -1,10 +1,9 @@
 #![no_std]
 #![no_main]
 
-use core::{
-  alloc::Layout,
-  panic::PanicInfo,
-};
+mod panic;
+
+use core::alloc::Layout;
 
 use libc::fprintf;
 use mimalloc::MiMalloc;
@@ -12,11 +11,6 @@ use neosh_arena::Arena;
 
 #[global_allocator]
 static ALLOC: MiMalloc = MiMalloc;
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-  loop {}
-}
 
 struct Point {
   x: i32,
@@ -43,6 +37,8 @@ pub extern "C" fn main() -> i32 {
       (*point).y,
     );
   }
+
+  panic!("This is a test panic!");
 
   0
 }

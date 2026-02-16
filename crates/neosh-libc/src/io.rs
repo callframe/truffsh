@@ -24,9 +24,9 @@ pub enum FileMode {
 impl From<FileMode> for *const libc::c_char {
   fn from(mode: FileMode) -> Self {
     match mode {
-      FileMode::Read => c"r".as_ptr(),
-      FileMode::Write => c"w".as_ptr(),
-      FileMode::ReadWrite => c"r+".as_ptr(),
+      FileMode::Read => c"rb".as_ptr(),
+      FileMode::Write => c"wb".as_ptr(),
+      FileMode::ReadWrite => c"r+b".as_ptr(),
     }
   }
 }

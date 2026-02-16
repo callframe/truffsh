@@ -1,0 +1,6 @@
+{
+  "mkdir": "mkdir",
+  "mkdir_flags": "-p",
+  "rm": "rm",
+  "rm_flags": "-rf"
+}

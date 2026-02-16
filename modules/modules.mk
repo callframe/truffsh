@@ -8,6 +8,8 @@ NEOSH_FLAGS := \
 	--edition=2024 \
 	--emit=link,dep-info=$(NEOSH_DEPEND) \
 	-C link-arg=$(MIMALLOC_OBJECT) \
+	-C link-arg=-lc \
+	-C link-arg=-lgcc \
 	-C panic=abort \
 	-C lto=thin
 

@@ -21,6 +21,7 @@ SED := sed
 CMAKE := cmake
 MKDIR := mkdir
 RUSTC := rustc
+BINDGEN := bindgen
 
 define notice
 $(Q_FLAG)$(ECHO) " $1 " $(notdir $(2))

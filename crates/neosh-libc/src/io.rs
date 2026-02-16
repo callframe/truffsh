@@ -89,43 +89,7 @@ impl File {
     unsafe { dealloc(buffer.ptr(), Self::buffer_layout(buffer.len())) };
   }
 
-  pub fn new(path: &str, mode: FileMode) -> Result<Self, FileError> {
-    let c_path = cstr(path);
-
-    let file = unsafe { libc::fopen(c_path.as_ptr() as *const libc::c_char, mode.clone().into()) };
-    if file.is_null() {
-      return Err(FileError::OpenFailed);
-    }
-
-    let buffer = match Self::create_buffer(FILE_BUFFER) {
-      Ok(buf) => buf,
-      Err(e) => {
-        unsafe { libc::fclose(file) };
-        return Err(e);
-      }
-    };
-
-    match Self::use_buffer(file, &buffer) {
-      Ok(()) => (),
-      Err(e) => {
-        unsafe { libc::fclose(file) };
-        Self::destroy_buffer(&buffer);
-        return Err(e);
-      }
-    }
-
-    Ok(Self {
-      handle: file,
-      buffer,
-    })
-  }
-
-  pub unsafe fn new_raw(fd: i32, mode: FileMode, buffer_size: usize) -> Result<Self, FileError> {
-    let file = unsafe { libc::fdopen(fd, mode.into()) };
-    if file.is_null() {
-      return Err(FileError::OpenFailed);
-    }
-
+  fn from_handle(file: *mut libc::FILE, buffer_size: usize) -> Result<Self, FileError> {
     let buffer = match Self::create_buffer(buffer_size) {
       Ok(buf) => buf,
       Err(e) => {
@@ -149,12 +113,68 @@ impl File {
     })
   }
 
+  pub fn new(path: &str, mode: FileMode) -> Result<Self, FileError> {
+    let c_path = cstr(path);
+
+    let file = unsafe { libc::fopen(c_path.as_ptr() as *const libc::c_char, mode.clone().into()) };
+    if file.is_null() {
+      return Err(FileError::OpenFailed);
+    }
+
+    Self::from_handle(file, FILE_BUFFER)
+  }
+
+  pub unsafe fn new_raw(fd: i32, mode: FileMode, buffer_size: usize) -> Result<Self, FileError> {
+    let file = unsafe { libc::fdopen(fd, mode.into()) };
+    if file.is_null() {
+      return Err(FileError::OpenFailed);
+    }
+
+    Self::from_handle(file, buffer_size)
+  }
+
   pub fn seek(&mut self, offset: i64, whence: FileWhence) -> Result<(), FileError> {
     let rc = unsafe { libc::fseek(self.handle, offset as libc::c_long, whence.into()) };
     if rc != 0 {
       return Err(FileError::SeekFailed);
     }
     Ok(())
+  }
+
+  pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, FileError> {
+    let n = unsafe { libc::fread(buf.as_mut_ptr().cast(), 1, buf.len(), self.handle) };
+    if n == 0 && unsafe { libc::ferror(self.handle) } != 0 {
+      return Err(FileError::ReadFailed);
+    }
+    Ok(n)
+  }
+
+  pub fn write(&mut self, buf: &[u8]) -> Result<usize, FileError> {
+    let n = unsafe { libc::fwrite(buf.as_ptr().cast(), 1, buf.len(), self.handle) };
+    if n == 0 && unsafe { libc::ferror(self.handle) } != 0 {
+      return Err(FileError::WriteFailed);
+    }
+    Ok(n)
+  }
+}
+
+pub trait Read {
+  fn read(&mut self, buf: &mut [u8]) -> Result<usize, FileError>;
+}
+
+pub trait Write {
+  fn write(&mut self, buf: &[u8]) -> Result<usize, FileError>;
+}
+
+impl Read for File {
+  fn read(&mut self, buf: &mut [u8]) -> Result<usize, FileError> {
+    self.read(buf)
+  }
+}
+
+impl Write for File {
+  fn write(&mut self, buf: &[u8]) -> Result<usize, FileError> {
+    self.write(buf)
   }
 }
 

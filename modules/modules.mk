@@ -4,6 +4,7 @@ NEOSH_SOURCE := $(NEOSH_DIR)/main.rs
 NEOSH_OUTPUT := $(BUILD_DIR)/neosh
 NEOSH_DEPEND := $(NEOSH_OUTPUT).d
 NEOSH_FLAGS := \
+	--target=$(TOOLCHAIN) \
 	--edition=2024 \
 	--emit=link,dep-info=$(NEOSH_DEPEND) \
 	-C link-arg=-lc \

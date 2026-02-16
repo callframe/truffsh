@@ -56,6 +56,7 @@ class Rule:
 
     def write(self, writer: Writer) -> None:
         writer.rule(self.name, self.command, self.description)
+        writer.newline()
 
 
 @dataclass

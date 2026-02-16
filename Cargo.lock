@@ -47,7 +47,9 @@ dependencies = [
 name = "neosh"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "mimalloc",
+ "neosh-arena",
 ]
 
 [[package]]

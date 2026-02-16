@@ -14,3 +14,13 @@ libc = { version = "0.2.182", default-features = false }
 typed-builder = { version = "0.23.2" }
 
 neosh-mutex = { path = "crates/neosh-mutex" }
+neosh-arena = { path = "crates/neosh-arena" }
+
+[profile.dev]
+codegen-units = 1
+lto = true
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = true

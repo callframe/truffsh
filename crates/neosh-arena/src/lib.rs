@@ -152,6 +152,12 @@ impl<const CSIZE: usize, const CALIGN: usize> Arena<CSIZE, CALIGN> {
   }
 }
 
+impl Arena<CHUNK_SIZE, CHUNK_ALIGN> {
+  pub fn default() -> Self {
+    Self::new().unwrap()
+  }
+}
+
 unsafe impl<const CSIZE: usize, const CALIGN: usize> Sync for Arena<CSIZE, CALIGN> {}
 
 #[cfg(test)]

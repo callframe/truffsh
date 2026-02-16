@@ -1,5 +1,4 @@
 #![no_std]
+#![allow(dead_code, non_snake_case)]
 
-pub fn add(a: i32, b: i32) -> i32 {
-    a + b
-}
+pub mod unistd;

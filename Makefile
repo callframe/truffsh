@@ -10,6 +10,9 @@ BUILD_DIR := $(WORKING_DIR)/build
 RUST_PROJECT_IN := $(WORKING_DIR)/rust-project.json.in
 RUST_PROJECT_OUT := $(WORKING_DIR)/rust-project.json
 
+UNISTD_IN := /usr/include/unistd.h
+UNISTD_OUT := $(BUILD_DIR)/unistd.rs
+
 ## Options
 Q ?= $(Q_FLAG)
 TOOLCHAIN ?= x86_64-unknown-linux-gnu
@@ -38,7 +41,9 @@ MIMALLOC_FLAGS := \
 	-DMI_BUILD_STATIC=OFF \
 	-DMI_BUILD_SHARED=OFF \
 	-DMI_XMALLOC=ON \
-	-DMI_OVERRIDE=ON
+	-DMI_OVERRIDE=ON \
+	-DMI_USE_CXX=OFF \
+	-DCMAKE_C_COMPILER=$(CC)
 
 ## Flags
 LD_FLAGS := 
@@ -52,6 +57,7 @@ RUST_FLAGS := \
 	-C lto=thin
 
 RUST_SYSROOT_FLAGS := --print sysroot
+BINDGEN_FLAGS := --use-core
 
 ## Includes
 include $(MODULES_DIR)/modules.mk
@@ -59,6 +65,10 @@ include $(MODULES_DIR)/modules.mk
 ## Rules
 .PHONY: all
 all: $(RUST_PROJECT_OUT) $(NEOSH_OUTPUT)
+
+$(UNISTD_OUT): $(UNISTD_IN)
+	$(call notice,BINDGEN,$@)
+	$(Q)$(BINDGEN) $(BINDGEN_FLAGS) $< -o $@
 
 $(RUST_PROJECT_OUT): SYSROOT := $(shell $(RUSTC) $(RUST_SYSROOT_FLAGS))
 $(RUST_PROJECT_OUT): $(RUST_PROJECT_IN)
@@ -71,7 +81,7 @@ $(BUILD_DIR):
 
 $(MIMALLOC_BUILD_DIR): | $(BUILD_DIR)
 	$(call notice,CMAKE,$@)
-	$(Q)CC=$(CC) $(CMAKE) -S $(MIMALLOC_DIR) -B $@ $(MIMALLOC_FLAGS)
+	$(Q)$(CMAKE) -S $(MIMALLOC_DIR) -B $@ $(MIMALLOC_FLAGS)
 
 $(MIMALLOC_OBJECT): | $(MIMALLOC_BUILD_DIR)
 	$(call notice,MAKE,$@)

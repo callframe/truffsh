@@ -9,7 +9,7 @@ NEOFFI_FLAGS := $(RUST_FLAGS) \
 
 $(NEOFFI_OUTPUT): $(NEOFFI_SOURCE) | $(BUILD_DIR)
 	$(call notice,RUSTC,$@)
-	$(Q)$(RUSTC) $(NEOFFI_FLAGS) $< -o $@
+	$(Q)BUILD_DIR=$(BUILD_DIR) $(RUSTC) $(NEOFFI_FLAGS) $< -o $@
 
 NEOSH_DIR := $(MODULES_DIR)/neosh
 NEOSH_SOURCE := $(NEOSH_DIR)/main.rs
@@ -23,10 +23,9 @@ NEOSH_FLAGS := $(RUST_FLAGS) \
 	-C link-arg=-lgcc \
 	--extern neo_ffi=$(NEOFFI_OUTPUT)
 
-$(NEOSH_OUTPUT): $(NEOSH_SOURCE) $(NEOFFI_OUTPUT) | $(MIMALLOC_OBJECT)
+$(NEOSH_OUTPUT): $(NEOSH_SOURCE) $(NEOFFI_OUTPUT) $(UNISTD_OUT) | $(MIMALLOC_OBJECT)
 	$(call notice,RUSTC,$@)
 	$(Q)$(RUSTC) $(NEOSH_FLAGS) $< -o $@
-
 
 .PHONY: clean-neoffi
 clean-neoffi:

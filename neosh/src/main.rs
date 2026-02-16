@@ -1,4 +1,10 @@
-use core::alloc::Layout;
+#![no_std]
+#![no_main]
+
+use core::{
+  alloc::Layout,
+  panic::PanicInfo,
+};
 
 use libc::fprintf;
 use mimalloc::MiMalloc;
@@ -6,6 +12,11 @@ use neosh_arena::Arena;
 
 #[global_allocator]
 static ALLOC: MiMalloc = MiMalloc;
+
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+  loop {}
+}
 
 struct Point {
   x: i32,
@@ -16,7 +27,8 @@ unsafe extern "C" {
   static stdout: *mut libc::FILE;
 }
 
-fn main() {
+#[unsafe(no_mangle)]
+pub extern "C" fn main() -> i32 {
   let arena = Arena::default();
   let point = arena.allocate(Layout::new::<Point>()) as *mut Point;
   unsafe {
@@ -31,4 +43,6 @@ fn main() {
       (*point).y,
     );
   }
+
+  0
 }

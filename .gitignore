@@ -2,6 +2,5 @@ build*/
 out*/
 rust-project.json
 **/__pycache__/*
-*.ninja
 toolchain.json
 *log

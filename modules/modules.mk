@@ -7,7 +7,7 @@ NEOFFI_FLAGS := $(RUST_FLAGS) \
 	--emit=link,dep-info=$(NEOFFI_DEPEND) \
 	--crate-type=rlib
 
-$(NEOFFI_OUTPUT): $(NEOFFI_SOURCE)
+$(NEOFFI_OUTPUT): $(NEOFFI_SOURCE) | $(BUILD_DIR)
 	$(call notice,RUSTC,$@)
 	$(Q)$(RUSTC) $(NEOFFI_FLAGS) $< -o $@
 

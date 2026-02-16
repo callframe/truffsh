@@ -1,5 +1,5 @@
 {
-  "sysroot_src": "@SYSROOT@",
+  "sysroot_src": "@SYSROOT@/lib/rustlib/src/rust/library",
   "crates": [
     {
       "root_module": "modules/neosh/main.rs",

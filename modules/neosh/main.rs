@@ -5,10 +5,10 @@ use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+  loop {}
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn main() -> i32 {
-    0
+  0
 }

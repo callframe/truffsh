@@ -1,68 +1,51 @@
 #![no_std]
 
 #[cfg(windows)]
-compile_error!("Windows is not supported yet");
+use core::marker::PhantomData;
 
-use typed_builder::TypedBuilder;
+#[cfg(windows)]
+compile_error!("Windows platform is not supported yet");
 
-#[derive(TypedBuilder)]
+mod unix;
+
 pub struct MutexGuard<'m> {
-  mutex: &'m Mutex,
-}
-
-impl<'m> Drop for MutexGuard<'m> {
-  fn drop(&mut self) {
-    self.mutex.unlock();
-  }
+  #[cfg(not(windows))]
+  _guard: unix::MutexGuard<'m>,
+  #[cfg(windows)]
+  _marker: PhantomData<&'m ()>,
 }
 
 pub struct Mutex {
-  #[cfg(unix)]
-  inner: libc::pthread_mutex_t,
+  #[cfg(not(windows))]
+  inner: unix::Mutex,
 }
 
-#[cfg(unix)]
 impl Mutex {
   pub fn new() -> Self {
-    use core::{
-      mem::MaybeUninit,
-      ptr,
-    };
-
-    unsafe {
-      let mut inner = MaybeUninit::uninit();
-      libc::pthread_mutex_init(inner.as_mut_ptr(), ptr::null());
-
+    #[cfg(not(windows))]
+    {
       Self {
-        inner: inner.assume_init(),
+        inner: unix::Mutex::new(),
       }
     }
-  }
 
-  fn get_mutex_ptr(&self) -> *mut libc::pthread_mutex_t {
-    &self.inner as *const _ as *mut _
+    #[cfg(windows)]
+    {
+      unimplemented!()
+    }
   }
 
   pub fn lock<'m>(&'m self) -> MutexGuard<'m> {
-    unsafe {
-      libc::pthread_mutex_lock(self.get_mutex_ptr());
+    #[cfg(not(windows))]
+    {
+      MutexGuard {
+        _guard: self.inner.lock(),
+      }
     }
 
-    MutexGuard::builder().mutex(self).build()
-  }
-
-  fn unlock(&self) {
-    unsafe {
-      libc::pthread_mutex_unlock(self.get_mutex_ptr());
-    }
-  }
-}
-
-#[cfg(unix)]
-impl Drop for Mutex {
-  fn drop(&mut self) {
-    unsafe {
-      libc::pthread_mutex_destroy(&mut self.inner);
+    #[cfg(windows)]
+    {
+      unimplemented!()
     }
   }
 }

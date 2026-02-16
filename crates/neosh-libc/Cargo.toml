@@ -10,3 +10,4 @@ libc = { workspace = true }
 
 getset = { workspace = true }
 typed-builder = { workspace = true }
+paste = { workspace = true }

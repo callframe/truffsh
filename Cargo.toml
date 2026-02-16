@@ -18,6 +18,7 @@ libc = { version = "0.2.182", default-features = false }
 
 typed-builder = { version = "0.23.2" }
 getset = { version = "0.1.6" }
+paste = { version = "1.0.15" }
 
 neosh-mutex = { path = "crates/neosh-mutex" }
 neosh-arena = { path = "crates/neosh-arena" }

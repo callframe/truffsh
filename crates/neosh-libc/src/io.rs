@@ -1,45 +1,25 @@
-use core::alloc::Layout;
+const WRITE_MODE: *const libc::c_char = c"w".as_ptr();
+const READ_MODE: *const libc::c_char = c"r".as_ptr();
 
-extern crate alloc;
-use crate::types::Slice;
-use alloc::alloc::alloc_zeroed;
+macro_rules! io_handle {
+  ($name:ident, $fd:expr, $mode:expr) => {
+    paste::paste! {
+        #[thread_local]
+        static [<$name:upper>]: core::cell::UnsafeCell<*mut libc::FILE> = core::cell::UnsafeCell::new(core::ptr::null_mut());
 
-pub trait Io {
-  fn write(&self, offset: usize, data: &[u8]) -> bool;
-}
+        pub fn [<get_ $name>]() -> *mut libc::FILE {
+          let handle_ptr = unsafe { *[<$name:upper>].get() };
+          if handle_ptr.is_null() {
+            let file_ptr = unsafe { libc::fdopen($fd, $mode as *const i8) };
+            unsafe { *[<$name:upper>].get() = file_ptr };
+          }
 
-#[repr(u8)]
-enum IoBufferMode {
-  Read,
-  Write,
-}
-
-struct IoBuffer<'rw, RW>
-where
-  RW: Io,
-{
-  backing: Slice,
-  head: usize,
-  tail: usize,
-  mode: IoBufferMode,
-  io: &'rw RW,
-}
-
-impl<'rw, RW> IoBuffer<'rw, RW>
-where
-  RW: Io,
-{
-  fn new(io: &'rw RW, mode: IoBufferMode, size: usize) -> Self {
-    let buffer_layout = Layout::from_size_align(size, 1).unwrap();
-    let buffer = unsafe { alloc_zeroed(buffer_layout) };
-    let backing = Slice::builder().ptr(buffer).len(size).build();
-
-    Self {
-      backing,
-      head: 0,
-      tail: 0,
-      mode,
-      io,
+          unsafe { *[<$name:upper>].get() }
+        }
     }
-  }
+  };
 }
+
+io_handle!(stdout, libc::STDOUT_FILENO, WRITE_MODE);
+io_handle!(stderr, libc::STDERR_FILENO, WRITE_MODE);
+io_handle!(stdin, libc::STDIN_FILENO, READ_MODE);

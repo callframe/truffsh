@@ -3,9 +3,12 @@ from ninja import Writer
 from pathlib import Path
 from json import loads
 from dataclasses import dataclass
+from sys import executable as python_executable
 
 NINJA_WIDTH = 80
 DOLLAR_SYMBOL = "$"
+PYTHON = python_executable
+THISFILE = Path(__file__).name
 
 
 class Paths:
@@ -17,15 +20,19 @@ class Paths:
 class Files:
     TOOLCHAIN_FILE = Paths.WORKING_DIR / "toolchain.json"
     NINJA_FILE = Paths.WORKING_DIR / "build.ninja"
+    NEOSH_FILE = Paths.BUILD_DIR / "neosh"
 
 
 class Rules:
     BUILD_DIR_RULE = "builddir"
     BUILD_DIR_CLEAN_RULE = "builddir_clean"
     CLEAN_RULE = "clean"
+    SELF_RULE = "self"
+    ALL_RULE = "all"
 
 
 class Variables:
+    PYTHON = "python"
     MKDIR = "mkdir"
     MKDIR_FLAGS = "mkdir_flags"
     BUILD_DIR = "builddir"
@@ -41,6 +48,7 @@ class Toolchain:
     rm_flags: str
 
     def write(self, writer: Writer) -> None:
+        writer.variable(Variables.PYTHON, PYTHON)
         writer.variable(Variables.MKDIR, self.mkdir)
         writer.variable(Variables.MKDIR_FLAGS, self.mkdir_flags)
         writer.variable(Variables.RM, self.rm)
@@ -95,6 +103,20 @@ def dirrule(path: Path) -> BiRule:
 
 def build_dir_rule(writer: Writer) -> None:
     dirrule(Paths.BUILD_DIR).write(writer)
+
+
+def self_rule(writer: Writer) -> None:
+    writer.rule(
+        name=Rules.SELF_RULE,
+        command=command([ref(Variables.PYTHON), THISFILE]),
+        description="Reconfiguring build.ninja",
+        generator=True,
+    )
+
+    writer.build(
+        outputs=str(Files.NINJA_FILE),
+        rule=Rules.SELF_RULE,
+    )
     writer.newline()
 
 
@@ -102,7 +124,15 @@ def clean_rule(writer: Writer) -> None:
     writer.build(
         outputs=Rules.CLEAN_RULE,
         rule=Rules.BUILD_DIR_CLEAN_RULE,
-        implicit=Rules.BUILD_DIR_RULE,
+    )
+    writer.newline()
+
+
+def all_rule(writer: Writer) -> None:
+    writer.build(
+        outputs=Rules.ALL_RULE,
+        rule=Rules.BUILD_DIR_RULE,
+        implicit=str(Files.NEOSH_FILE),
     )
     writer.newline()
 
@@ -122,4 +152,6 @@ if __name__ == "__main__":
         writer = Writer(file, NINJA_WIDTH)
         toolchain.write(writer)
         build_dir_rule(writer)
+        self_rule(writer)
         clean_rule(writer)
+        all_rule(writer)

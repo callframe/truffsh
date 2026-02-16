@@ -3,7 +3,10 @@
 extern crate alloc;
 
 use alloc::{
-  alloc::alloc_zeroed,
+  alloc::{
+    alloc_zeroed,
+    dealloc,
+  },
   vec::Vec,
 };
 use core::{
@@ -72,7 +75,6 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> ArenaChunk<CHUNK_SIZE, MIN
   pub fn allocate(&mut self, layout: Layout) -> Option<*mut u8> {
     assert!(layout.size() > 0);
     assert!(layout.size() <= self.capacity);
-    assert!(layout.align() <= self.capacity);
 
     let aligned = self.get_aligned(layout);
     let new_used = aligned.end - self.ptr as usize;
@@ -85,8 +87,17 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> ArenaChunk<CHUNK_SIZE, MIN
   }
 }
 
-pub struct Arena<const CHUNK_SIZE: usize = 1, const MIN_ALIGN: usize = 1> {
-  chunks: UnsafeCell<Vec<ArenaChunk<CHUNK_SIZE, MIN_ALIGN>>>,
+impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Drop for ArenaChunk<CHUNK_SIZE, MIN_ALIGN> {
+  fn drop(&mut self) {
+    unsafe {
+      let layout = Layout::from_size_align(CHUNK_SIZE, MIN_ALIGN).unwrap();
+      dealloc(self.ptr, layout);
+    }
+  }
+}
+
+pub struct Arena<const CSIZE: usize = CHUNK_SIZE, const MIN_ALIGN: usize = CSIZE> {
+  chunks: UnsafeCell<Vec<ArenaChunk<CSIZE, MIN_ALIGN>>>,
   lock: Mutex,
 }
 

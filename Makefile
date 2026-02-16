@@ -44,8 +44,8 @@ LD_FLAGS :=
 SED_FLAGS := -e
 RM_FLAGS := -rf
 CMAKE_FLAGS := -G"Unix Makefiles"
-RUST_FLAGS := \
-	--print sysroot
+RUST_FLAGS := +nightly
+RUST_SYSROOT_FLAGS := --print sysroot
 
 ## Includes
 include $(MODULES_DIR)/modules.mk
@@ -54,7 +54,7 @@ include $(MODULES_DIR)/modules.mk
 .PHONY: all
 all: $(RUST_PROJECT_OUT) $(NEOSH_OUTPUT)
 
-$(RUST_PROJECT_OUT): SYSROOT := $(shell $(RUSTC) $(RUST_FLAGS))
+$(RUST_PROJECT_OUT): SYSROOT := $(shell $(RUSTC) $(RUST_SYSROOT_FLAGS))
 $(RUST_PROJECT_OUT): $(RUST_PROJECT_IN)
 	$(call notice,CONFIG,$@)
 	$(Q)$(SED) $(SED_FLAGS) "s|@SYSROOT@|$(SYSROOT)|g" $< > $@

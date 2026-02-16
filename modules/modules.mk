@@ -7,10 +7,10 @@ NEOSH_FLAGS := \
 	--target=$(TOOLCHAIN) \
 	--edition=2024 \
 	--emit=link,dep-info=$(NEOSH_DEPEND) \
-	-C link-arg=-lc \
 	-C link-arg=$(MIMALLOC_OBJECT) \
 	-C panic=abort \
-	-C lto=thin
+	-C lto=thin \
+	-Z build-std=core,alloc,std
 
 $(NEOSH_OUTPUT): $(NEOSH_SOURCE) | $(MIMALLOC_OBJECT)
 	$(call notice,RUSTC,$@)

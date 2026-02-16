@@ -1,5 +1,18 @@
 #![no_std]
 
+use typed_builder::TypedBuilder;
+
+#[derive(TypedBuilder)]
+pub struct MutexGuard<'m> {
+  mutex: &'m Mutex,
+}
+
+impl<'m> Drop for MutexGuard<'m> {
+  fn drop(&mut self) {
+    self.mutex.unlock();
+  }
+}
+
 pub struct Mutex {
   #[cfg(unix)]
   inner: libc::pthread_mutex_t,
@@ -27,13 +40,15 @@ impl Mutex {
     &self.inner as *const _ as *mut _
   }
 
-  pub fn lock<'m>(&'m self) {
+  pub fn lock<'m>(&'m self) -> MutexGuard<'m> {
     unsafe {
       libc::pthread_mutex_lock(self.get_mutex_ptr());
     }
+
+    MutexGuard::builder().mutex(self).build()
   }
 
-  pub fn unlock(&self) {
+  fn unlock(&self) {
     unsafe {
       libc::pthread_mutex_unlock(self.get_mutex_ptr());
     }

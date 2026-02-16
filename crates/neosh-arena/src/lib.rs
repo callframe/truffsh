@@ -14,6 +14,7 @@ use core::{
   cell::UnsafeCell,
 };
 use neosh_mutex::Mutex;
+use typed_builder::TypedBuilder;
 
 pub const CHUNK_SIZE: usize = 1024 * 1024;
 
@@ -29,6 +30,7 @@ fn align_up(addr: usize, align: usize) -> usize {
   (addr + align - 1) & !(align - 1)
 }
 
+#[derive(TypedBuilder)]
 struct ArenaChunkRange {
   start: usize,
   end: usize,
@@ -66,10 +68,9 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> ArenaChunk<CHUNK_SIZE, MIN
   fn get_aligned(&self, layout: Layout) -> ArenaChunkRange {
     let curr = self.get_current_addr();
     let aligned = align_up(curr, layout.align());
-    ArenaChunkRange {
-      start: aligned,
-      end: aligned + layout.size(),
-    }
+    let end = aligned + layout.size();
+
+    ArenaChunkRange::builder().start(aligned).end(end).build()
   }
 
   pub fn allocate(&mut self, layout: Layout) -> Option<*mut u8> {
@@ -125,12 +126,11 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIG
       return Err(ArenaError::TooLarge);
     }
 
-    self.lock.lock();
+    let _guard = self.lock.lock();
     let chunks = unsafe { self.get_chunks() };
 
     if let Some(chunk) = chunks.last_mut() {
       if let Some(ptr) = chunk.allocate(layout) {
-        self.lock.unlock();
         return Ok(ptr);
       }
     }
@@ -138,8 +138,6 @@ impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Arena<CHUNK_SIZE, MIN_ALIG
     let mut new_chunk = ArenaChunk::<CHUNK_SIZE, MIN_ALIGN>::new()?;
     let ptr = new_chunk.allocate(layout).unwrap();
     chunks.push(new_chunk);
-
-    self.lock.unlock();
     Ok(ptr)
   }
 

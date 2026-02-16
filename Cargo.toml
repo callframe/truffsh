@@ -11,4 +11,6 @@ resolver = "3"
 mimalloc = { version = "0.1.48", features = ["v3", "override"] }
 libc = { version = "0.2.182", default-features = false }
 
+typed-builder = { version = "0.23.2" }
+
 neosh-mutex = { path = "crates/neosh-mutex" }

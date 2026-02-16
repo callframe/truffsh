@@ -24,6 +24,7 @@ pub enum ArenaError {
   OutOfMemory,
   TooLarge,
   ZeroSized,
+  InvalidLayout,
 }
 
 #[inline(always)]
@@ -45,7 +46,11 @@ struct ArenaChunk<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> {
 
 impl<const CSIZE: usize, const CALIGN: usize> ArenaChunk<CSIZE, CALIGN> {
   pub fn new() -> Result<Self, ArenaError> {
-    let layout = Layout::from_size_align(CSIZE, CALIGN).unwrap();
+    let layout = match Layout::from_size_align(CSIZE, CALIGN) {
+      Ok(layout) => layout,
+      Err(_) => return Err(ArenaError::InvalidLayout),
+    };
+
     let ptr = unsafe { alloc_zeroed(layout) };
     if ptr.is_null() {
       return Err(ArenaError::OutOfMemory);
@@ -92,7 +97,7 @@ impl<const CSIZE: usize, const CALIGN: usize> ArenaChunk<CSIZE, CALIGN> {
 impl<const CHUNK_SIZE: usize, const MIN_ALIGN: usize> Drop for ArenaChunk<CHUNK_SIZE, MIN_ALIGN> {
   fn drop(&mut self) {
     unsafe {
-      let layout = Layout::from_size_align(CHUNK_SIZE, MIN_ALIGN).unwrap();
+      let layout = Layout::from_size_align_unchecked(self.capacity, MIN_ALIGN);
       dealloc(self.ptr, layout);
     }
   }

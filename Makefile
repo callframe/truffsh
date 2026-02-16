@@ -8,28 +8,11 @@ SOURCE_DIR := $(WORKING_DIR)/src
 
 ## Options
 Q ?= $(Q_FLAG)
-WITH_TC ?= clang
-WITH_DEBUG ?= 0
-
-## Constants
-CLANG_NAME := clang
-GCC_NAME := gcc
 
 ## Toolchains
 ECHO := echo
 RM := rm
-SED := sed
 CMAKE := cmake
-
-ifeq ($(WITH_TC), $(CLANG_NAME))
-	CC := clang
-else ifeq ($(WITH_TC), $(GCC_NAME))
-	CC := gcc
-endif
-
-ifeq ($(CC),)
-	$(error "Unsupported toolchain: $(WITH_TC)")
-endif
 
 define notice
 $(Q_FLAG)$(ECHO) " $1 " $(notdir $(2))
@@ -49,37 +32,13 @@ MIMALLOC_FLAGS := \
 	-DMI_OVERRIDE=ON
 
 ## Flags
-CC_FLAGS := \
-	-std=c11 \
-	-Wall -Wextra -Werror \
-	-MMD -MP \
-	-I$(WORKING_DIR) -I$(SOURCE_DIR) -I$(MIMALLOC_INCLUDE)
 LD_FLAGS := 
 RM_FLAGS := -rf
-SED_FLAGS := -e
 CMAKE_FLAGS := -G"Unix Makefiles"
-
-## Configs
-SED_FLAGS += "s/@NEOSH_DEBUG@/$(WITH_DEBUG)/g"
-
-CONFIG_H_IN := $(WORKING_DIR)/config.h.in
-CONFIG_H := $(WORKING_DIR)/config.h
-
-NEOSH_DEBUG := "@NEOSH_DEBUG@"
-
-## Targets
-BIN_NEOSH := $(WORKING_DIR)/neosh
-NEOSH_SOURCES := \
-	$(SOURCE_DIR)/neosh.c \
-	$(SOURCE_DIR)/vec.c
-
-NEOSH_OBJECTS := $(NEOSH_SOURCES:.c=.o)
-NEOSH_OBJECTS += $(MIMALLOC_OBJECT)
-NEOSH_DEPENDS := $(NEOSH_SOURCES:.c=.d)
 
 ## Rules
 .PHONY: all
-all: $(BIN_NEOSH)
+all: 
 
 $(MIMALLOC_BUILD_DIR):
 	$(call notice,CMAKE,$@)
@@ -89,40 +48,10 @@ $(MIMALLOC_OBJECT): | $(MIMALLOC_BUILD_DIR)
 	$(call notice,MAKE,$@)
 	$(Q)$(MAKE) -C $(MIMALLOC_BUILD_DIR)
 
-$(CONFIG_H): $(CONFIG_H_IN)
-	$(call notice,SED,$@)
-	$(Q)$(SED) $(SED_FLAGS) $< > $@
-
-$(BIN_NEOSH): $(NEOSH_OBJECTS) $(MIMALLOC_OBJECT)
-	$(call notice,LD,$@)
-	$(Q)$(CC) $(LD_FLAGS) -o $@ $^
-
-$(NEOSH_OBJECTS): $(CONFIG_H)
-
-%.o: %.c
-	$(call notice,CC,$@)
-	$(Q)$(CC) $(CC_FLAGS) -c -o $@ $<
-
-.PHONY: clean-objects
-clean-objects:
-	$(call notice,RM,$(NEOSH_OBJECTS))
-	$(Q)$(RM) $(RM_FLAGS) $(NEOSH_OBJECTS)
-	$(call notice,RM,$(NEOSH_DEPENDS))
-	$(Q)$(RM) $(RM_FLAGS) $(NEOSH_DEPENDS)
-	$(call notice,RM,$(CONFIG_H))
-	$(Q)$(RM) $(RM_FLAGS) $(CONFIG_H)
-
-.PHONY: clean-binaries
-clean-binaries:
-	$(call notice,RM,$(BIN_NEOSH))
-	$(Q)$(RM) $(RM_FLAGS) $(BIN_NEOSH)
-
 .PHONY: clean-mimalloc
 clean-mimalloc:
 	$(call notice,RM,$(MIMALLOC_BUILD_DIR))
 	$(Q)$(RM) $(RM_FLAGS) $(MIMALLOC_BUILD_DIR)
 
 .PHONY: clean
-clean: clean-objects clean-binaries clean-mimalloc
-
--include $(NEOSH_DEPENDS)
+clean: clean-mimalloc

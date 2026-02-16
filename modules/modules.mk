@@ -9,8 +9,7 @@ NEOSH_FLAGS := \
 	--emit=link,dep-info=$(NEOSH_DEPEND) \
 	-C link-arg=$(MIMALLOC_OBJECT) \
 	-C panic=abort \
-	-C lto=thin \
-	-Z build-std=core,alloc,std
+	-C lto=thin
 
 $(NEOSH_OUTPUT): $(NEOSH_SOURCE) | $(MIMALLOC_OBJECT)
 	$(call notice,RUSTC,$@)

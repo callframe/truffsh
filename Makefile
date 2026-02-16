@@ -4,7 +4,8 @@ Q_FLAG := @
 
 ## Paths
 WORKING_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-SOURCE_DIR := $(WORKING_DIR)/src
+MODULES_DIR := $(WORKING_DIR)/modules
+BUILD_DIR := $(WORKING_DIR)/build
 
 ## Options
 Q ?= $(Q_FLAG)
@@ -13,6 +14,8 @@ Q ?= $(Q_FLAG)
 ECHO := echo
 RM := rm
 CMAKE := cmake
+MKDIR := mkdir
+RUSTC := rustc
 
 define notice
 $(Q_FLAG)$(ECHO) " $1 " $(notdir $(2))
@@ -21,7 +24,7 @@ endef
 ## Dependencies
 MIMALLOC_DIR := $(WORKING_DIR)/mimalloc
 MIMALLOC_INCLUDE := $(MIMALLOC_DIR)/include
-MIMALLOC_BUILD_DIR := $(MIMALLOC_DIR)/build
+MIMALLOC_BUILD_DIR := $(BUILD_DIR)/mimalloc
 MIMALLOC_OBJECT := $(MIMALLOC_BUILD_DIR)/mimalloc.o
 MIMALLOC_FLAGS := \
 	-DMI_BUILD_OBJECT=ON \
@@ -36,11 +39,18 @@ LD_FLAGS :=
 RM_FLAGS := -rf
 CMAKE_FLAGS := -G"Unix Makefiles"
 
+## Includes
+include $(MODULES_DIR)/modules.mk
+
 ## Rules
 .PHONY: all
-all: 
+all: $(NEOSH_OUTPUT)
 
-$(MIMALLOC_BUILD_DIR):
+$(BUILD_DIR):
+	$(call notice,MKDIR,$@)
+	$(Q)$(MKDIR) $@
+
+$(MIMALLOC_BUILD_DIR): | $(BUILD_DIR)
 	$(call notice,CMAKE,$@)
 	$(Q)CC=$(CC) $(CMAKE) -S $(MIMALLOC_DIR) -B $@ $(MIMALLOC_FLAGS)
 

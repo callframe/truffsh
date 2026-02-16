@@ -6,7 +6,7 @@
       "edition": "2024",
       "deps": [],
       "cfg": [],
-      "env": {},
+      "env": { "BUILD_DIR": "@BUILD_DIR@" },
       "is_proc_macro": false
     },
     {

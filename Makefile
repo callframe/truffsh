@@ -73,7 +73,7 @@ $(UNISTD_OUT): $(UNISTD_IN)
 $(RUST_PROJECT_OUT): SYSROOT := $(shell $(RUSTC) $(RUST_SYSROOT_FLAGS))
 $(RUST_PROJECT_OUT): $(RUST_PROJECT_IN)
 	$(call notice,CONFIG,$@)
-	$(Q)$(SED) $(SED_FLAGS) "s|@SYSROOT@|$(SYSROOT)|g" $< > $@
+	$(Q)$(SED) $(SED_FLAGS) "s|@SYSROOT@|$(SYSROOT)|g;s|@BUILD_DIR@|$(BUILD_DIR)|g" $< > $@
 
 $(BUILD_DIR):
 	$(call notice,MKDIR,$@)

@@ -32,9 +32,10 @@ Numeric types:
 - `uint` — unsigned integer.
 - `real` — double-precision floating point.
 
-Other built-in types:
-- `string` — built-in string type. Internal representation is not exposed.
+Other types:
 - `rune` — semantic alias for `int`. Represents a character value.
+- `string` — type alias for `[rune]` (`string :: type [rune]`).
+- `[T]` — array of type `T`.
 
 Type aliasing is supported with the `type` keyword:
 
@@ -155,6 +156,5 @@ create_person :: proc(name: string, age: int): person = person{name: name, age: 
 
 ### Open Questions
 
-- **Strings**: Strings are currently a built-in type with no user-visible internal representation. A future version may formalize them as a type alias over a sequence of runes, but as a scripting language, exposing memory layout is not a priority.
 - **Booleans**: Undecided whether `bool` should be a language-level primitive type or a strongly typed alias (e.g. `bool :: type int`).
-- **Runes**: `rune` is currently a semantic alias for `int`. Its role may change depending on how strings are formalized and whether runes need distinct behavior beyond being an integer.
+- **Runes**: `rune` is currently a semantic alias for `int`. It may need distinct behavior beyond being an integer depending on how string operations evolve.

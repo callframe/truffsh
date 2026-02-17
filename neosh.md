@@ -146,6 +146,35 @@ person :: object {
 create_person :: proc(name: string, age: int): person = person{name: name, age: age}
 ```
 
+### Shell
+
+NeoSH is a shell. External commands and binaries are first-class citizens, not strings passed to a subprocess API.
+Executing programs should feel as natural as calling a procedure.
+
+#### Commands
+
+External commands can be invoked directly.
+The exact invocation syntax is under evaluation to find the best fit within the expression grammar.
+Candidates include bare words, explicit keywords, and block-based forms.
+
+#### Pipes
+
+NeoSH supports pipes between expressions, not just between external commands.
+This allows chaining procedures and commands in a uniform way, similar to Elixir's `|>` operator.
+
+```neosh
+# Piping between commands (traditional)
+ls | grep ".nsh"
+
+# Piping between expressions (planned)
+data |> filter(is_valid) |> transform
+```
+
+#### Environment
+
+Commands and binaries inherit and interact with the shell environment (PATH, working directory, environment variables).
+The exact mechanism for reading and setting environment state is under development.
+
 ### Design Philosophy
 
 - Everything is an expression.
@@ -158,3 +187,6 @@ create_person :: proc(name: string, age: int): person = person{name: name, age: 
 
 - **Booleans**: Undecided whether `bool` should be a language-level primitive type or a strongly typed alias (e.g. `bool :: type int`).
 - **Runes**: `rune` is currently a semantic alias for `int`. It may need distinct behavior beyond being an integer depending on how string operations evolve.
+- **Command invocation syntax**: How external commands are invoked within the expression grammar. Bare words, explicit keywords, and block-based forms are all candidates.
+- **Output capture**: How the output of an external command is captured into a NeoSH value.
+- **Environment access**: How environment variables are read, set, and passed to commands.

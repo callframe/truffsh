@@ -213,3 +213,41 @@ macro_rules! io_file {
 io_file!(stdin, FileMode::Read, libc::STDIN_FILENO);
 io_file!(stdout, FileMode::Write, libc::STDOUT_FILENO);
 io_file!(stderr, FileMode::Write, libc::STDERR_FILENO);
+
+#[macro_export]
+macro_rules! print {
+  ($($arg:tt)*) => {{
+    use core::fmt::Write;
+    let _ = write!($crate::io::stdout(), $($arg)*);
+    let _ = $crate::io::stdout().flush();
+  }};
+}
+
+#[macro_export]
+macro_rules! println {
+  () => { $crate::print!("\n") };
+  ($($arg:tt)*) => {{
+    use core::fmt::Write;
+    let _ = writeln!($crate::io::stdout(), $($arg)*);
+    let _ = $crate::io::stdout().flush();
+  }};
+}
+
+#[macro_export]
+macro_rules! eprint {
+  ($($arg:tt)*) => {{
+    use core::fmt::Write;
+    let _ = write!($crate::io::stderr(), $($arg)*);
+    let _ = $crate::io::stderr().flush();
+  }};
+}
+
+#[macro_export]
+macro_rules! eprintln {
+  () => { $crate::eprint!("\n") };
+  ($($arg:tt)*) => {{
+    use core::fmt::Write;
+    let _ = writeln!($crate::io::stderr(), $($arg)*);
+    let _ = $crate::io::stderr().flush();
+  }};
+}

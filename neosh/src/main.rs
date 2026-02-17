@@ -5,9 +5,12 @@ mod panic;
 
 use core::alloc::Layout;
 
-use libc::fprintf;
 use mimalloc::MiMalloc;
 use neosh_arena::Arena;
+use neosh_libc::{
+  eprintln,
+  println,
+};
 
 #[global_allocator]
 static ALLOC: MiMalloc = MiMalloc;
@@ -15,10 +18,6 @@ static ALLOC: MiMalloc = MiMalloc;
 struct Point {
   x: i32,
   y: i32,
-}
-
-unsafe extern "C" {
-  static stdout: *mut libc::FILE;
 }
 
 #[unsafe(no_mangle)]
@@ -29,20 +28,14 @@ pub extern "C" fn main() -> i32 {
     *point = Point { x: 10, y: 20 };
   }
 
-  unsafe {
-    fprintf(
-      stdout,
-      b"Point: (%d, %d)\n\0".as_ptr() as *const i8,
-      (*point).x,
-      (*point).y,
-    );
-  }
+  let point = unsafe { &*point };
+  println!("Point: ({}, {})", point.x, point.y);
+  eprintln!("debug: point allocated at arena");
 
   let x = 42;
   panic!(
     "unexpected value x={x} for point ({}, {})",
-    unsafe { (*point).x },
-    unsafe { (*point).y }
+    point.x, point.y
   );
 
   0

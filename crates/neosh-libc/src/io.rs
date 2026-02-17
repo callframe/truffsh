@@ -107,10 +107,11 @@ impl File {
       }
     }
 
-    Ok(Self {
+    let file = Self {
       handle: file,
       buffer,
-    })
+    };
+    Ok(file)
   }
 
   pub fn new(path: &str, mode: FileMode) -> Result<Self, FileError> {

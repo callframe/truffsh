@@ -3,21 +3,28 @@
 
 mod panic;
 
-use core::alloc::Layout;
+use core::{
+  alloc::Layout,
+  fmt::Display,
+};
 
 use mimalloc::MiMalloc;
 use neosh_arena::Arena;
-use neosh_libc::{
-  eprintln,
-  println,
-};
+use neosh_libc::println;
 
 #[global_allocator]
 static ALLOC: MiMalloc = MiMalloc;
 
+#[derive(Debug)]
 struct Point {
   x: i32,
   y: i32,
+}
+
+impl Display for Point {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    write!(f, "({}, {})", self.x, self.y)
+  }
 }
 
 #[unsafe(no_mangle)]
@@ -29,14 +36,6 @@ pub extern "C" fn main() -> i32 {
   }
 
   let point = unsafe { &*point };
-  println!("Point: ({}, {})", point.x, point.y);
-  eprintln!("debug: point allocated at arena");
-
-  let x = 42;
-  panic!(
-    "unexpected value x={x} for point ({}, {})",
-    point.x, point.y
-  );
-
+  println!("{}", point);
   0
 }

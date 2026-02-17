@@ -226,11 +226,9 @@ macro_rules! print {
 #[macro_export]
 macro_rules! println {
   () => { $crate::print!("\n") };
-  ($($arg:tt)*) => {{
-    use core::fmt::Write;
-    let _ = writeln!($crate::io::stdout(), $($arg)*);
-    let _ = $crate::io::stdout().flush();
-  }};
+  ($fmt:literal $(, $($arg:tt)*)?) => {
+    $crate::print!(concat!($fmt, "\n") $(, $($arg)*)?)
+  };
 }
 
 #[macro_export]
@@ -245,9 +243,7 @@ macro_rules! eprint {
 #[macro_export]
 macro_rules! eprintln {
   () => { $crate::eprint!("\n") };
-  ($($arg:tt)*) => {{
-    use core::fmt::Write;
-    let _ = writeln!($crate::io::stderr(), $($arg)*);
-    let _ = $crate::io::stderr().flush();
-  }};
+  ($fmt:literal $(, $($arg:tt)*)?) => {
+    $crate::eprint!(concat!($fmt, "\n") $(, $($arg)*)?)
+  };
 }

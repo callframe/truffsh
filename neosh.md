@@ -25,22 +25,21 @@ Type annotations are optional.
 
 #### Types
 
-NeoSH has numeric types, booleans, runes, and user-defined types via objects.
+NeoSH has numeric types, strings, runes, and user-defined types via objects.
 
 Numeric types:
 - `int` — signed integer at system word width.
 - `uint` — unsigned integer.
 - `real` — double-precision floating point.
 
-Other primitives:
-- `bool` — `true` or `false`.
-- `rune` — a type alias for `int`, representing a character value (`rune :: type int`).
+Other built-in types:
+- `string` — built-in string type. Internal representation is not exposed.
+- `rune` — semantic alias for `int`. Represents a character value.
 
 Type aliasing is supported with the `type` keyword:
 
 ```neosh
 my_type :: type int
-rune :: type int
 ```
 
 #### Comments
@@ -156,7 +155,6 @@ create_person :: proc(name: string, age: int): person = person{name: name, age: 
 
 ### Open Questions
 
-Topics under consideration, not yet finalized:
-
-- **Strings and slices**: `string` is intended as a type alias over a slice of runes. Slice semantics, allocation behavior, and construction syntax are not yet settled.
-- **Pointers**: Pointer types may be needed for FFI. Whether and how they are exposed in the language is undecided.
+- **Strings**: Strings are currently a built-in type with no user-visible internal representation. A future version may formalize them as a type alias over a sequence of runes, but as a scripting language, exposing memory layout is not a priority.
+- **Booleans**: Undecided whether `bool` should be a language-level primitive type or a strongly typed alias (e.g. `bool :: type int`).
+- **Runes**: `rune` is currently a semantic alias for `int`. Its role may change depending on how strings are formalized and whether runes need distinct behavior beyond being an integer.

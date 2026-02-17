@@ -11,11 +11,11 @@ make -f "$1"
 ```
 
 ```neosh
-argv :: arguments
-if argv.len == 0 {
-  echo "No arguments provided"
-  exit 1
-}
+argv :: arguments 
+# if len(argv) == 0 {
+#     echo "No arguments provided"
+#     exit 1
+# }
 
 makefile_location :: argv[1]
 make -f "$makefile_location"

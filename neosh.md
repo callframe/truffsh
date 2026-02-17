@@ -1,30 +1,56 @@
 ## NeoSH
-NeoSH is a shell that tries to provide a better experience for writing scripts. 
-The primary goal of NeoSH is to write scripts instead of replacing your shell.
+
+NeoSH is a scripting language that also serves as your shell.
+The interactive shell experience is intentionally different from Bash or Zsh and is not the current focus.
+The primary goal is to build a strong, expressive language for writing scripts.
 
 ### Phases
-NeoSH is divided into three phases:
 
-1. **Parsing**: The input code is parsed and as much as possible is turned into an AST.
-2. **Const-Eval**: Constant expressions are evaluated before execution.
+NeoSH execution is divided into three phases:
+
+1. **Parsing**: Source code is parsed into an AST.
+2. **Const-Eval**: Constant expressions are evaluated before runtime.
 3. **Execution**: The AST is executed.
 
-### Syntax, Types and Semantics
-NeoSH is inspired by Functional Languages like Haskell, OCaml and Elixir, but also draws inspiration from Pascal and Perl.
+### Syntax, Types, and Semantics
+
+NeoSH draws from functional languages like Haskell, OCaml, and Elixir, as well as Pascal and Perl.
 
 #### Basics
-Everything is an expression. Expressions can be separated by semicolons but this is only required when multiple expressions are on the same line.
-A dynamic type system provides the ability to check types and ensure type safety. There is no requirement for type annotations.
+
+Everything in NeoSH is an expression.
+Expressions can be separated by semicolons; semicolons are only required when multiple expressions appear on the same line.
+NeoSH uses a dynamic type system with runtime type checking.
+Type annotations are optional.
 
 #### Types
 
+NeoSH has numeric types, booleans, runes, and user-defined types via objects.
+
+Numeric types:
+- `int` — signed integer at system word width.
+- `uint` — unsigned integer.
+- `real` — double-precision floating point.
+
+Other primitives:
+- `bool` — `true` or `false`.
+- `rune` — a type alias for `int`, representing a character value (`rune :: type int`).
+
+Type aliasing is supported with the `type` keyword:
+
+```neosh
+my_type :: type int
+rune :: type int
+```
 
 #### Comments
-NeoSH supports comments using the `#` symbol. Comments are ignored by the parser and do not affect the execution of the code.
+
+Comments begin with `#` and extend to the end of the line.
+Comments are ignored by the parser.
 
 #### Expressions
-There are different kinds of expressions in NeoSH.
-Some examples are:
+
+NeoSH has several expression forms:
 - Literals: `1`, `"hello"`, `true`
 - Variables: `x`, `y`
 - Function calls: `add(1, 2)`
@@ -32,10 +58,45 @@ Some examples are:
 - Block expressions: `{ x :: 10; y :: x + 5; x + y }`
 - Declarations: `x :: 10`
 
+#### Grammar (EBNF-style, Informal)
+
+Informal sketch for orientation. Not a normative parser specification.
+
+```ebnf
+program      = { expression [ ";" ] } ;
+
+expression   = declaration
+             | procedure
+             | source_expr
+             | object_decl
+             | type_alias
+             | block
+             | call
+             | operator_expr
+             | literal
+             | identifier ;
+
+declaration  = identifier "::" expression ;
+procedure    = "proc" [ "(" [ param { "," param } ] ")" ] [ ":" type ] "=" expression ;
+param        = identifier [ ":" type ] ;
+source_expr  = "source" string ;
+object_decl  = "object" "{" { identifier "::" type } "}" ;
+type_alias   = "type" type ;
+block        = "{" { expression [ ";" ] } "}" ;
+call         = identifier "(" [ expression { "," expression } ] ")" ;
+
+type         = identifier ;
+literal      = int | real | string | bool ;
+identifier   = (* language identifier *) ;
+```
+
 #### Variables
-In NeoSH, variables are bound to a value, not assigned. Variables are always immutable and cannot be reassigned.
-Declaring a variable with the same name as an existing variable will result in shadowing. The earlier variable looses it's binding but will NOT be garbage collected.
-Be careful with shadowing, especially in loops to prevent stack overflow.
+
+Names are bound to values, not assigned.
+All bindings are immutable.
+Declaring the same name again creates a shadow; the earlier binding is no longer visible in that scope.
+Shadowing does not deallocate the earlier value.
+Use shadowing deliberately, especially in loops.
 
 ```neosh
 x :: 10
@@ -43,23 +104,25 @@ y :: x + 5
 ```
 
 #### Procedures
-The core of NeoSH is the procedure system. Procedures represent a set of instructions that execute when a procedure is invoked.
-Procedures are defined using the `proc` keyword. Procedures are nothing more than a variable that holds a set of instructions.
-Procedures can optionally accept parameters but must always return a value. The last expression in a procedure is the return value.
+
+Procedures are the core abstraction in NeoSH.
+A procedure is defined with the `proc` keyword and bound to a name like any other value.
+Procedures optionally accept parameters and always return a value.
+The last expression in a procedure body is its return value.
 
 ```neosh
 empty :: proc = ()
 do_add :: proc(x, y) = x + y
-# Types can be specified using: (<type> represents a placeholder)
-# do_sub :: proc(x: <type>, y: <type>): <type> = x - y
+# With type annotations:
+# do_sub :: proc(x: int, y: int): int = x - y
 ```
 
 #### Modules
-NeoSH builds on top of modules. A module source's other modules.
-Sourcing a module will invoke parsing, as well as local constant evaluation.
-Through sourcing, it is possible to import procedures, constants, and variables.
-One file represents a module. Multiple files could be considered a package but there is no concept of a package in NeoSH.
-When sourcing a module, you bind the module's contents to a variable like procedures.
+
+One file is one module.
+A module can `source` another module, which triggers parsing and const-eval for that file.
+Sourcing binds the module's exported values to a name.
+There is no formal package concept; multiple files may act as one, but NeoSH does not enforce or define this.
 
 ```neosh
 io :: source "io.nsh"
@@ -68,11 +131,32 @@ print_hello :: proc = io.println("Hello World!")
 ```
 
 #### Objects
+
+Objects define structured data with named, typed fields.
+An object is declared with the `object` keyword and bound to a name like any other value.
+Object values are constructed using literal syntax: `TypeName{field: value, ...}`.
+Objects can be passed to and returned from procedures.
+
 ```neosh
 person :: object {
     name :: string
     age :: int
 }
 
-create_preson :: proc(name: string, age: int): person = person{name: name, age: age}
+create_person :: proc(name: string, age: int): person = person{name: name, age: age}
 ```
+
+### Design Philosophy
+
+- Everything is an expression.
+- Prefer small, composable procedures.
+- Bindings are immutable; data flow should be explicit.
+- Type annotations are documentation, not requirements.
+- Modules organize behavior by file.
+
+### Open Questions
+
+Topics under consideration, not yet finalized:
+
+- **Strings and slices**: `string` is intended as a type alias over a slice of runes. Slice semantics, allocation behavior, and construction syntax are not yet settled.
+- **Pointers**: Pointer types may be needed for FFI. Whether and how they are exposed in the language is undecided.

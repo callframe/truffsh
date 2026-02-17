@@ -1,5 +1,8 @@
 extern crate alloc;
-use core::alloc::Layout;
+use core::{
+  alloc::Layout,
+  fmt,
+};
 
 use alloc::alloc::{
   alloc_zeroed,
@@ -60,7 +63,7 @@ impl From<FileWhence> for libc::c_int {
 
 pub struct File {
   handle: *mut libc::FILE,
-  buffer: Slice,
+  _buffer: Slice,
 }
 
 impl File {
@@ -109,7 +112,7 @@ impl File {
 
     let file = Self {
       handle: file,
-      buffer,
+      _buffer: buffer,
     };
     Ok(file)
   }
@@ -157,31 +160,56 @@ impl File {
     }
     Ok(n)
   }
-}
 
-pub trait Read {
-  fn read(&mut self, buf: &mut [u8]) -> Result<usize, FileError>;
-}
-
-pub trait Write {
-  fn write(&mut self, buf: &[u8]) -> Result<usize, FileError>;
-}
-
-impl Read for File {
-  fn read(&mut self, buf: &mut [u8]) -> Result<usize, FileError> {
-    self.read(buf)
+  pub fn flush(&mut self) -> Result<(), FileError> {
+    let rc = unsafe { libc::fflush(self.handle) };
+    if rc != 0 {
+      return Err(FileError::WriteFailed);
+    }
+    Ok(())
   }
 }
 
-impl Write for File {
-  fn write(&mut self, buf: &[u8]) -> Result<usize, FileError> {
-    self.write(buf)
+impl fmt::Write for File {
+  fn write_str(&mut self, s: &str) -> fmt::Result {
+    self.write(s.as_bytes()).map_err(|_| fmt::Error)?;
+    Ok(())
   }
 }
 
-impl Drop for File {
-  fn drop(&mut self) {
-    unsafe { libc::fclose(self.handle) };
-    Self::destroy_buffer(&self.buffer);
-  }
+macro_rules! io_file {
+  ($name:ident, $mode:expr, $fd:expr) => {
+    paste::paste! {
+      #[thread_local]
+      static [<STD_ $name:upper>]:
+        core::cell::UnsafeCell<core::mem::MaybeUninit<File>> =
+        core::cell::UnsafeCell::new(core::mem::MaybeUninit::uninit());
+
+      #[thread_local]
+      static [<STD_ $name:upper _INIT>]:
+        core::cell::UnsafeCell<bool> =
+        core::cell::UnsafeCell::new(false);
+
+      pub fn $name() -> &'static mut File {
+        unsafe {
+          if !*[<STD_ $name:upper _INIT>].get() {
+            let dupped = libc::dup($fd);
+            if dupped < 0 {
+              panic!("Failed to duplicate file descriptor for {}", stringify!($name));
+            }
+
+            let file = File::new_raw(dupped, $mode, FILE_BUFFER).unwrap();
+            (*[<STD_ $name:upper>].get()).write(file);
+            *[<STD_ $name:upper _INIT>].get() = true;
+          }
+
+          &mut *(*[<STD_ $name:upper>].get()).as_mut_ptr()
+        }
+      }
+    }
+  };
 }
+
+io_file!(stdin, FileMode::Read, libc::STDIN_FILENO);
+io_file!(stdout, FileMode::Write, libc::STDOUT_FILENO);
+io_file!(stderr, FileMode::Write, libc::STDERR_FILENO);

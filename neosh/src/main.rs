@@ -38,7 +38,12 @@ pub extern "C" fn main() -> i32 {
     );
   }
 
-  panic!("This is a test panic!");
+  let x = 42;
+  panic!(
+    "unexpected value x={x} for point ({}, {})",
+    unsafe { (*point).x },
+    unsafe { (*point).y }
+  );
 
   0
 }

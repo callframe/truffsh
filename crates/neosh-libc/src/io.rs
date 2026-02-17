@@ -63,7 +63,8 @@ impl From<FileWhence> for libc::c_int {
 
 pub struct File {
   handle: *mut libc::FILE,
-  _buffer: Slice,
+  #[allow(dead_code)]
+  buffer: Slice,
 }
 
 impl File {
@@ -112,7 +113,7 @@ impl File {
 
     let file = Self {
       handle: file,
-      _buffer: buffer,
+      buffer,
     };
     Ok(file)
   }
